@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hawk Lock · Panel Interno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #06090f;
+  --bg2:    #0b1120;
+  --bg3:    #0f1a2e;
+  --blue:   #1d72e8;
+  --bluel:  #4fa8ff;
+  --green:  #22c55e;
+  --yellow: #f59e0b;
+  --red:    #ef4444;
+  --text:   #e8edf5;
+  --muted:  #4a6080;
+  --border: rgba(29,114,232,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;min-height:100vh;overflow-x:hidden}
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:32px}
+.login-logo{text-align:center}
+.login-logo img{width:56px;height:56px}
+.login-logo h1{font-family:'Chakra Petch',sans-serif;font-size:22px;font-weight:700;letter-spacing:2px;margin-top:12px;color:var(--text)}
+.login-logo span{color:var(--blue)}
+.pin-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px;text-align:center;width:320px}
+.pin-box p{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:20px}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin-bottom:24px}
+.pin-dot{width:14px;height:14px;border-radius:50%;background:var(--bg3);border:2px solid var(--border);transition:.2s}
+.pin-dot.filled{background:var(--blue);border-color:var(--blue);box-shadow:0 0 12px rgba(29,114,232,.5)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pin-btn{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;font-family:'Chakra Petch',sans-serif;font-size:18px;font-weight:600;color:var(--text);cursor:pointer;transition:.15s}
+.pin-btn:hover{background:var(--bg);border-color:var(--blue);color:var(--bluel)}
+.pin-btn:active{transform:scale(.95)}
+.pin-error{color:var(--red);font-size:11px;letter-spacing:1px;margin-top:8px;min-height:16px}
+/* ── LAYOUT ── */
+#app{display:none;min-height:100vh}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:16px}
+.topbar-logo{font-family:'Chakra Petch',sans-serif;font-size:15px;font-weight:700;letter-spacing:2px;color:var(--text)}
+.topbar-logo span{color:var(--blue)}
+.topbar-badge{font-size:10px;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:2px 8px;letter-spacing:1px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.api-status{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.api-dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.api-dot.ok{background:var(--green);box-shadow:0 0 8px rgba(34,197,94,.4)}
+.btn-logout{background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 14px;cursor:pointer;transition:.15s}
+.btn-logout:hover{border-color:var(--red);color:var(--red)}
+/* ── TABS ── */
+.tabs{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 32px;display:flex;gap:4px}
+.tab{padding:14px 20px;font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;display:flex;align-items:center;gap:8px}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--bluel);border-bottom-color:var(--blue)}
+.tab-icon{font-size:15px}
+/* ── CONTENT ── */
+.content{padding:32px;max-width:1300px;margin:0 auto}
+.module{display:none}
+.module.active{display:block}
+/* ── CARDS ── */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:32px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+.stat-card .num{font-family:'Chakra Petch',sans-serif;font-size:28px;font-weight:700;color:var(--bluel)}
+.stat-card .num.green{color:var(--green)}
+.stat-card .num.yellow{color:var(--yellow)}
+.stat-card .num.red{color:var(--red)}
+.stat-card .lbl{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
+/* ── TABLE ── */
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.table-head{padding:20px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap}
+.table-head h3{font-family:'Chakra Petch',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filter-input{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:8px 12px;outline:none;width:220px}
+.filter-input:focus{border-color:var(--blue)}
+.filter-select{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:8px 12px;outline:none;cursor:pointer}
+.filter-select:focus{border-color:var(--blue)}
+.btn{background:var(--blue);border:none;border-radius:8px;color:#fff;font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;padding:9px 18px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--bluel)}
+.btn.secondary{background:var(--bg3);border:1px solid var(--border);color:var(--text)}
+.btn.secondary:hover{border-color:var(--blue);color:var(--bluel)}
+.btn.green{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:var(--green)}
+.btn.green:hover{background:rgba(34,197,94,.25)}
+.btn.sm{padding:5px 10px;font-size:10px}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--bg3)}
+th{padding:12px 16px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:500;white-space:nowrap}
+td{padding:12px 16px;font-size:12px;border-bottom:1px solid rgba(29,114,232,.07);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(29,114,232,.04)}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.5px;border-radius:4px;padding:3px 8px;font-weight:600;white-space:nowrap}
+.badge.pendiente{background:rgba(74,96,128,.15);color:var(--muted);border:1px solid rgba(74,96,128,.2)}
+.badge.enviado{background:rgba(29,114,232,.12);color:var(--bluel);border:1px solid rgba(29,114,232,.2)}
+.badge.respondio{background:rgba(245,158,11,.12);color:var(--yellow);border:1px solid rgba(245,158,11,.2)}
+.badge.interesado{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.badge.descartado{background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.15)}
+.badge.activo{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+/* ── PAGINATION ── */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-top:1px solid var(--border)}
+.page-info{font-size:11px;color:var(--muted)}
+.page-btns{display:flex;gap:6px}
+.page-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 12px;cursor:pointer;transition:.15s}
+.page-btn:hover:not(:disabled){border-color:var(--blue);color:var(--bluel)}
+.page-btn:disabled{opacity:.3;cursor:default}
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal h3{font-family:'Chakra Petch',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;margin-bottom:24px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:10px 14px;outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue)}
+.field textarea{resize:vertical;min-height:80px}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+/* ── INLINE SELECT ── */
+.inline-select{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 8px;cursor:pointer;max-width:130px}
+/* ── INVENTARIO CARDS ── */
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.inv-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden}
+.inv-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--blue)}
+.inv-card.warn::before{background:var(--yellow)}
+.inv-card.danger::before{background:var(--red)}
+.inv-card h4{font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;margin-bottom:16px}
+.inv-nums{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.inv-num-box{background:var(--bg3);border-radius:8px;padding:12px;text-align:center}
+.inv-num-box .n{font-family:'Chakra Petch',sans-serif;font-size:24px;font-weight:700;color:var(--bluel)}
+.inv-num-box .l{font-size:10px;color:var(--muted);letter-spacing:.5px;margin-top:2px}
+.inv-total{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);margin-bottom:12px}
+.inv-total strong{color:var(--text);font-family:'Chakra Petch',sans-serif;font-size:14px}
+/* ── LOADER ── */
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row td{text-align:center;padding:40px;color:var(--muted)}
+/* ── ROI CALC ── */
+.roi-wrap{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+@media(max-width:700px){.roi-wrap{grid-template-columns:1fr}}
+.roi-inputs{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px}
+.roi-inputs h3{font-family:'Chakra Petch',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;margin-bottom:24px;color:var(--bluel)}
+.slider-field{margin-bottom:20px}
+.slider-field label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bottom:8px}
+.slider-field label span{color:var(--text);font-weight:600;font-size:13px}
+input[type=range]{width:100%;accent-color:var(--blue);cursor:pointer}
+.roi-result{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px;position:sticky;top:80px}
+.roi-result h3{font-family:'Chakra Petch',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;margin-bottom:24px}
+.roi-line{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.roi-line:last-of-type{border-bottom:none}
+.roi-line .rl{font-size:12px;color:var(--muted)}
+.roi-line .rv{font-family:'Chakra Petch',sans-serif;font-size:14px;font-weight:700;color:var(--text)}
+.roi-line .rv.big{font-size:22px;color:var(--green)}
+.roi-tip{background:rgba(29,114,232,.08);border:1px solid rgba(29,114,232,.15);border-radius:8px;padding:16px;margin-top:20px;font-size:12px;color:var(--muted);line-height:1.6}
+.roi-tip strong{color:var(--bluel)}
+.btn-share{width:100%;margin-top:16px;justify-content:center}
+/* ── TOAST ── */
+#toast{position:fixed;bottom:28px;right:28px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 20px;font-size:12px;z-index:9999;transform:translateY(20px);opacity:0;transition:.3s;pointer-events:none;max-width:320px}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.ok{border-color:rgba(34,197,94,.4);color:var(--green)}
+#toast.err{border-color:rgba(239,68,68,.4);color:var(--red)}
+/* ── PROGRESS BAR ── */
+.prog-bar{background:var(--bg3);border-radius:4px;height:6px;overflow:hidden;margin-top:12px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--bluel));border-radius:4px;transition:width .5s ease}
+/* ── EMPTY ── */
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty .em-icon{font-size:48px;margin-bottom:16px}
+.empty p{font-size:13px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-logo">
+    <h1>HAWK <span>LOCK</span></h1>
+    <div style="font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:4px">PANEL INTERNO</div>
+  </div>
+  <div class="pin-box">
+    <p>Ingresa tu PIN de acceso</p>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="pinPress(1)">1</button>
+      <button class="pin-btn" onclick="pinPress(2)">2</button>
+      <button class="pin-btn" onclick="pinPress(3)">3</button>
+      <button class="pin-btn" onclick="pinPress(4)">4</button>
+      <button class="pin-btn" onclick="pinPress(5)">5</button>
+      <button class="pin-btn" onclick="pinPress(6)">6</button>
+      <button class="pin-btn" onclick="pinPress(7)">7</button>
+      <button class="pin-btn" onclick="pinPress(8)">8</button>
+      <button class="pin-btn" onclick="pinPress(9)">9</button>
+      <button class="pin-btn secondary" onclick="pinClear()" style="font-size:13px">⌫</button>
+      <button class="pin-btn" onclick="pinPress(0)">0</button>
+      <button class="pin-btn secondary" onclick="pinReset()" style="font-size:11px">CLR</button>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+  </div>
+</div>
+
+<!-- ══ APP ═════════════════════════════════════════════════ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">HAWK <span>LOCK</span></div>
+      <div class="topbar-badge">PANEL INTERNO</div>
+    </div>
+    <div class="topbar-right">
+      <div class="api-status">
+        <div class="api-dot" id="api-dot"></div>
+        <span id="api-label">Conectando...</span>
+      </div>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('campana')"><span class="tab-icon">📬</span>Campaña Email</div>
+    <div class="tab" onclick="switchTab('distribuidores')"><span class="tab-icon">📋</span>Distribuidores</div>
+    <div class="tab" onclick="switchTab('inventario')"><span class="tab-icon">📦</span>Inventario</div>
+    <div class="tab" onclick="switchTab('roi')"><span class="tab-icon">📊</span>Calculadora ROI</div>
+  </div>
+
+  <div class="content">
+
+    <!-- ── CAMPAÑA EMAIL ──────────────────────────────── -->
+    <div class="module active" id="mod-campana">
+      <div class="stat-row" id="campana-stats">
+        <div class="stat-card"><div class="num" id="st-total">—</div><div class="lbl">Total talleres</div></div>
+        <div class="stat-card"><div class="num" id="st-pendiente">—</div><div class="lbl">Pendientes</div></div>
+        <div class="stat-card"><div class="num" id="st-enviado">—</div><div class="lbl">Enviados</div></div>
+        <div class="stat-card"><div class="num yellow" id="st-respondio">—</div><div class="lbl">Respondieron</div></div>
+        <div class="stat-card"><div class="num green" id="st-interesado">—</div><div class="lbl">Interesados</div></div>
+        <div class="stat-card"><div class="num red" id="st-descartado">—</div><div class="lbl">Descartados</div></div>
+      </div>
+      <div id="prog-wrap" style="margin-bottom:24px;display:none">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px">
+          <span>Progreso campaña</span><span id="prog-pct">0%</span>
+        </div>
+        <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-head">
+          <h3>Base de Talleres</h3>
+          <div class="filters">
+            <input class="filter-input" id="c-search" placeholder="Buscar taller, email..." oninput="debounce(loadTalleres,400)">
+            <select class="filter-select" id="c-zona" onchange="loadTalleres()">
+              <option value="">Todas las zonas</option>
+              <option>Norte</option><option>Sur</option><option>Centro</option>
+              <option>Oriente</option><option>Occidente</option><option>Suba</option>
+            </select>
+            <select class="filter-select" id="c-estado" onchange="loadTalleres()">
+              <option value="">Todos los estados</option>
+              <option>Pendiente</option><option>Enviado</option>
+              <option>Respondió</option><option>Interesado</option><option>Descartado</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Razón Social</th><th>Email</th><th>Municipio</th>
+              <th>Zona</th><th>Estado</th><th>Enviado</th><th>Respuesta</th><th>Nota</th>
+            </tr></thead>
+            <tbody id="talleres-tbody">
+              <tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <div class="page-info" id="talleres-info">—</div>
+          <div class="page-btns">
+            <button class="page-btn" id="btn-prev" onclick="cambiarPagina(-1)" disabled>← Anterior</button>
+            <button class="page-btn" id="btn-next" onclick="cambiarPagina(1)" disabled>Siguiente →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DISTRIBUIDORES ─────────────────────────────── -->
+    <div class="module" id="mod-distribuidores">
+      <div class="table-wrap">
+        <div class="table-head">
+          <h3>Distribuidores Autorizados</h3>
+          <button class="btn" onclick="abrirModalDist()">+ Nuevo distribuidor</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Nombre</th><th>Taller</th><th>Ciudad</th>
+              <th>Teléfono</th><th>Email</th><th>Estado</th><th>Desde</th><th>Stock</th>
+            </tr></thead>
+            <tbody id="dist-tbody">
+              <tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── INVENTARIO ─────────────────────────────────── -->
+    <div class="module" id="mod-inventario">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+        <h3 style="font-family:'Chakra Petch',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px">Stock Actual</h3>
+        <button class="btn" onclick="abrirModalInv()">+ Agregar producto</button>
+      </div>
+      <div class="inv-grid" id="inv-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- ── ROI CALCULADORA ────────────────────────────── -->
+    <div class="module" id="mod-roi">
+      <div style="margin-bottom:24px">
+        <h3 style="font-family:'Chakra Petch',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;margin-bottom:6px">Calculadora ROI · Distribuidor</h3>
+        <p style="font-size:12px;color:var(--muted)">Úsala en reuniones con talleres para mostrar el ingreso potencial con BLOQX.</p>
+      </div>
+      <div class="roi-wrap">
+        <div class="roi-inputs">
+          <h3>Datos del taller</h3>
+          <div class="slider-field">
+            <label>Vehículos que atiende por mes <span id="v-motos">80</span></label>
+            <input type="range" min="10" max="500" value="80" id="sl-motos" oninput="calcROI()">
+          </div>
+          <div class="slider-field">
+            <label>% clientes que aceptarían BLOQX <span id="v-pct">15</span>%</label>
+            <input type="range" min="1" max="40" value="15" id="sl-pct" oninput="calcROI()">
+          </div>
+          <div class="slider-field">
+            <label>Precio instalación que cobraría <span>$</span><span id="v-inst">50000</span></label>
+            <input type="range" min="20000" max="100000" step="5000" value="50000" id="sl-inst" oninput="calcROI()">
+          </div>
+          <div class="slider-field">
+            <label>Precio de venta del BLOQX <span>$</span><span id="v-venta">180000</span></label>
+            <input type="range" min="150000" max="250000" step="5000" value="180000" id="sl-venta" oninput="calcROI()">
+          </div>
+          <div class="slider-field">
+            <label>Su costo mayorista (precio Hawk Lock) <span>$</span><span id="v-costo">150000</span></label>
+            <input type="range" min="120000" max="170000" step="5000" value="150000" id="sl-costo" oninput="calcROI()">
+          </div>
+        </div>
+        <div class="roi-result">
+          <h3>Proyección mensual</h3>
+          <div class="roi-line"><span class="rl">Unidades estimadas / mes</span><span class="rv" id="r-unidades">12</span></div>
+          <div class="roi-line"><span class="rl">Ganancia por unidad vendida</span><span class="rv" id="r-margen">$30,000</span></div>
+          <div class="roi-line"><span class="rl">Ingresos por instalación</span><span class="rv" id="r-inst-ing">$600,000</span></div>
+          <div class="roi-line"><span class="rl">Ingresos por venta del producto</span><span class="rv" id="r-prod-ing">$360,000</span></div>
+          <div class="roi-line"><span class="rl">💰 Ingreso total estimado / mes</span><span class="rv big" id="r-total">$960,000</span></div>
+          <div class="roi-tip">
+            Con <strong id="tip-unidades">12 instalaciones/mes</strong> este taller genera <strong id="tip-anual">$11,520,000/año</strong> adicionales — sin cambiar su actividad principal.
+          </div>
+          <button class="btn btn-share" onclick="copiarROI()">📋 Copiar resumen para WhatsApp</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<!-- ── MODAL DISTRIBUIDOR ── -->
+<div class="modal-bg" id="modal-dist">
+  <div class="modal">
+    <h3>Nuevo Distribuidor</h3>
+    <div class="field"><label>Nombre del contacto</label><input id="d-nombre" placeholder="Juan Pérez"></div>
+    <div class="field"><label>Nombre del taller</label><input id="d-taller" placeholder="AutoMoto Sur"></div>
+    <div class="field"><label>Ciudad</label><input id="d-ciudad" placeholder="Bogotá"></div>
+    <div class="field"><label>Teléfono / WhatsApp</label><input id="d-tel" placeholder="3001234567"></div>
+    <div class="field"><label>Email</label><input id="d-email" placeholder="taller@ejemplo.com"></div>
+    <div class="field"><label>Dirección</label><input id="d-dir" placeholder="Cra 7 #45-23, Chapinero"></div>
+    <div class="field"><label>Notas</label><textarea id="d-nota" placeholder="Observaciones..."></textarea></div>
+    <div class="modal-btns">
+      <button class="btn secondary" onclick="cerrarModal('modal-dist')">Cancelar</button>
+      <button class="btn" onclick="guardarDist()">Guardar distribuidor</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL INVENTARIO ── -->
+<div class="modal-bg" id="modal-inv">
+  <div class="modal">
+    <h3 id="inv-modal-title">Agregar Producto</h3>
+    <input type="hidden" id="inv-idx">
+    <div class="field"><label>Producto</label><input id="inv-prod" placeholder="BLOQX V1"></div>
+    <div class="field"><label>Unidades en Colombia</label><input type="number" id="inv-col" placeholder="0" min="0"></div>
+    <div class="field"><label>Unidades en tránsito (Brasil)</label><input type="number" id="inv-trans" placeholder="0" min="0"></div>
+    <div class="field"><label>Stock mínimo (alerta)</label><input type="number" id="inv-min" placeholder="5" min="0"></div>
+    <div class="field"><label>Nota</label><input id="inv-nota" placeholder="Ej: Pedido del 15 jun en camino"></div>
+    <div class="modal-btns">
+      <button class="btn secondary" onclick="cerrarModal('modal-inv')">Cancelar</button>
+      <button class="btn" onclick="guardarInv()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────
+const PIN_CORRECTO = '2003';
+const API = 'https://script.google.com/macros/s/AKfycbwI1NY7QbomhiIGmrdc_7KpxUTq2TAF1_ACaRPzfdPCUC6RbD4tgynJ90VsSwbJ2WMv/exec';
+
+// ── PIN ───────────────────────────────────────────────────
+let pinActual = '';
+function pinPress(n) {
+  if (pinActual.length >= 4) return;
+  pinActual += n;
+  actualizarDots();
+  if (pinActual.length === 4) verificarPin();
+}
+function pinClear() { pinActual = pinActual.slice(0,-1); actualizarDots(); }
+function pinReset() { pinActual = ''; actualizarDots(); document.getElementById('pin-error').textContent = ''; }
+function actualizarDots() {
+  document.querySelectorAll('.pin-dot').forEach((d,i) => {
+    d.classList.toggle('filled', i < pinActual.length);
+  });
+}
+function verificarPin() {
+  if (pinActual === PIN_CORRECTO) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    iniciarApp();
+  } else {
+    document.getElementById('pin-error').textContent = 'PIN incorrecto';
+    setTimeout(() => { pinReset(); document.getElementById('pin-error').textContent=''; }, 1200);
+  }
+}
+function logout() { location.reload(); }
+
+// ── API ───────────────────────────────────────────────────
+async function api(params) {
+  const url = API + '?' + new URLSearchParams(params).toString();
+  const r = await fetch(url);
+  return r.json();
+}
+
+async function iniciarApp() {
+  try {
+    await api({accion:'ping'});
+    document.getElementById('api-dot').classList.add('ok');
+    document.getElementById('api-label').textContent = 'Conectado';
+  } catch {
+    document.getElementById('api-label').textContent = 'Sin conexión';
+  }
+  loadCampanaStats();
+  loadTalleres();
+}
+
+// ── TABS ──────────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const ids = ['campana','distribuidores','inventario','roi'];
+    t.classList.toggle('active', ids[i] === id);
+  });
+  document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+  document.getElementById('mod-'+id).classList.add('active');
+  if (id==='distribuidores') loadDistribuidores();
+  if (id==='inventario') loadInventario();
+  if (id==='roi') calcROI();
+}
+
+// ── CAMPAÑA ───────────────────────────────────────────────
+let talleresPage = 1;
+let talleresTotal = 0;
+let talleresPags = 1;
+
+async function loadCampanaStats() {
+  try {
+    const d = await api({accion:'getCampana'});
+    document.getElementById('st-total').textContent     = d.total?.toLocaleString() || '0';
+    document.getElementById('st-pendiente').textContent  = d.pendiente?.toLocaleString() || '0';
+    document.getElementById('st-enviado').textContent    = d.enviado?.toLocaleString() || '0';
+    document.getElementById('st-respondio').textContent  = d.respondio?.toLocaleString() || '0';
+    document.getElementById('st-interesado').textContent = d.interesado?.toLocaleString() || '0';
+    document.getElementById('st-descartado').textContent = d.descartado?.toLocaleString() || '0';
+    const pct = d.total > 0 ? Math.round((d.enviado + d.respondio + d.interesado + d.descartado) / d.total * 100) : 0;
+    document.getElementById('prog-wrap').style.display = 'block';
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-pct').textContent = pct + '%';
+  } catch {}
+}
+
+async function loadTalleres() {
+  const tbody = document.getElementById('talleres-tbody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>';
+  const params = {
+    accion: 'getTalleres',
+    q:      document.getElementById('c-search').value,
+    zona:   document.getElementById('c-zona').value,
+    estado: document.getElementById('c-estado').value,
+    page:   talleresPage
+  };
+  try {
+    const d = await api(params);
+    talleresTotal = d.total || 0;
+    talleresPags  = d.pages || 1;
+    document.getElementById('talleres-info').textContent =
+      `${talleresTotal.toLocaleString()} talleres · Página ${talleresPage} de ${talleresPags}`;
+    document.getElementById('btn-prev').disabled = talleresPage <= 1;
+    document.getElementById('btn-next').disabled = talleresPage >= talleresPags;
+
+    if (!d.rows || d.rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="em-icon">📭</div><p>No hay talleres con esos filtros.<br>Importa tu base RUES en la pestaña "Talleres" del Sheet.</p></div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = d.rows.map(r => `
+      <tr>
+        <td>${r.razon || '—'}</td>
+        <td style="color:var(--bluel)">${r.email || '—'}</td>
+        <td>${r.municipio || '—'}</td>
+        <td>${r.zona || '—'}</td>
+        <td>
+          <select class="inline-select" onchange="updateTaller(${r.idx},'estado',this.value)">
+            ${['Pendiente','Enviado','Respondió','Interesado','Descartado'].map(s=>
+              `<option ${r.estado===s?'selected':''}>${s}</option>`
+            ).join('')}
+          </select>
+        </td>
+        <td>${r.enviado || '—'}</td>
+        <td>${r.respuesta || '—'}</td>
+        <td><input style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;font-size:11px;padding:4px 8px;width:120px"
+          value="${r.nota||''}" placeholder="nota..."
+          onblur="updateTaller(${r.idx},'nota',this.value)"></td>
+      </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--red)">Error cargando datos. Verifica la URL del Apps Script.</td></tr>`;
+  }
+}
+
+function cambiarPagina(delta) {
+  talleresPage = Math.max(1, Math.min(talleresPags, talleresPage + delta));
+  loadTalleres();
+}
+
+async function updateTaller(idx, campo, valor) {
+  try {
+    await api({accion:'updateTaller', idx, campo, valor});
+    toast('Guardado ✓', 'ok');
+    if (campo === 'estado') { loadCampanaStats(); }
+  } catch { toast('Error al guardar', 'err'); }
+}
+
+// ── DISTRIBUIDORES ────────────────────────────────────────
+async function loadDistribuidores() {
+  const tbody = document.getElementById('dist-tbody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>';
+  try {
+    const d = await api({accion:'getDistribuidores'});
+    if (!d.rows || d.rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="em-icon">🤝</div><p>Aún no hay distribuidores registrados.<br>Agrega el primero con el botón de arriba.</p></div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = d.rows.map(r => `<tr>
+      <td>${r.nombre}</td>
+      <td style="font-weight:600">${r.taller}</td>
+      <td>${r.ciudad}</td>
+      <td><a href="https://wa.me/57${r.telefono}" target="_blank" style="color:var(--green);text-decoration:none">📱 ${r.telefono}</a></td>
+      <td style="color:var(--bluel)">${r.email}</td>
+      <td><span class="badge activo">${r.estado}</span></td>
+      <td>${r.fecha}</td>
+      <td><strong style="color:var(--bluel)">${r.stock}</strong></td>
+    </tr>`).join('');
+  } catch { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--red);padding:30px">Error cargando distribuidores</td></tr>`; }
+}
+
+function abrirModalDist() { document.getElementById('modal-dist').classList.add('open'); }
+async function guardarDist() {
+  const data = {
+    nombre: document.getElementById('d-nombre').value,
+    taller: document.getElementById('d-taller').value,
+    ciudad: document.getElementById('d-ciudad').value,
+    telefono: document.getElementById('d-tel').value,
+    email: document.getElementById('d-email').value,
+    direccion: document.getElementById('d-dir').value,
+    nota: document.getElementById('d-nota').value
+  };
+  if (!data.nombre || !data.taller) { toast('Nombre y taller son obligatorios','err'); return; }
+  try {
+    await api({accion:'saveDistribuidor', data: JSON.stringify(data)});
+    toast('Distribuidor registrado ✓','ok');
+    cerrarModal('modal-dist');
+    loadDistribuidores();
+  } catch { toast('Error al guardar','err'); }
+}
+
+// ── INVENTARIO ────────────────────────────────────────────
+async function loadInventario() {
+  const grid = document.getElementById('inv-grid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)"><div class="spinner"></div></div>';
+  try {
+    const d = await api({accion:'getInventario'});
+    if (!d.rows || d.rows.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1"><div class="empty"><div class="em-icon">📦</div><p>No hay productos en inventario.<br>Agrega el primero con el botón de arriba.</p></div></div>';
+      return;
+    }
+    grid.innerHTML = d.rows.map(r => {
+      const total = (r.colombia || 0) + (r.transito || 0);
+      const nivel = total <= 0 ? 'danger' : total <= r.minimo ? 'warn' : '';
+      return `<div class="inv-card ${nivel}">
+        <h4>${r.producto}</h4>
+        <div class="inv-nums">
+          <div class="inv-num-box"><div class="n">${r.colombia}</div><div class="l">En Colombia</div></div>
+          <div class="inv-num-box"><div class="n" style="color:var(--yellow)">${r.transito}</div><div class="l">En tránsito</div></div>
+        </div>
+        <div class="inv-total"><span>Total disponible</span><strong>${total}</strong></div>
+        ${total <= r.minimo ? `<div class="badge ${total<=0?'descartado':'respondio'}" style="margin-bottom:12px">⚠️ ${total<=0?'Sin stock':'Stock bajo'}</div>` : ''}
+        <div style="display:flex;gap:8px">
+          <button class="btn sm" onclick="editarInv(${r.idx},'${r.producto}',${r.colombia},${r.transito},${r.minimo},'${r.nota}')">Editar</button>
+          <div style="font-size:10px;color:var(--muted);display:flex;align-items:center">Actualizado: ${r.ultimo_mov||'—'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--red);padding:40px">Error cargando inventario</div>'; }
+}
+
+function abrirModalInv() {
+  document.getElementById('inv-modal-title').textContent = 'Agregar Producto';
+  document.getElementById('inv-idx').value = '';
+  ['inv-prod','inv-col','inv-trans','inv-min','inv-nota'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('modal-inv').classList.add('open');
+}
+function editarInv(idx,prod,col,trans,min,nota) {
+  document.getElementById('inv-modal-title').textContent = 'Editar Stock';
+  document.getElementById('inv-idx').value = idx;
+  document.getElementById('inv-prod').value = prod;
+  document.getElementById('inv-col').value = col;
+  document.getElementById('inv-trans').value = trans;
+  document.getElementById('inv-min').value = min;
+  document.getElementById('inv-nota').value = nota;
+  document.getElementById('modal-inv').classList.add('open');
+}
+async function guardarInv() {
+  const data = {
+    idx:      document.getElementById('inv-idx').value || null,
+    producto: document.getElementById('inv-prod').value,
+    colombia: parseInt(document.getElementById('inv-col').value) || 0,
+    transito: parseInt(document.getElementById('inv-trans').value) || 0,
+    minimo:   parseInt(document.getElementById('inv-min').value) || 5,
+    nota:     document.getElementById('inv-nota').value
+  };
+  if (!data.producto) { toast('El nombre del producto es obligatorio','err'); return; }
+  try {
+    await api({accion:'saveInventario', data: JSON.stringify(data)});
+    toast('Inventario actualizado ✓','ok');
+    cerrarModal('modal-inv');
+    loadInventario();
+  } catch { toast('Error al guardar','err'); }
+}
+
+// ── ROI ───────────────────────────────────────────────────
+function calcROI() {
+  const motos  = parseInt(document.getElementById('sl-motos').value);
+  const pct    = parseInt(document.getElementById('sl-pct').value) / 100;
+  const inst   = parseInt(document.getElementById('sl-inst').value);
+  const venta  = parseInt(document.getElementById('sl-venta').value);
+  const costo  = parseInt(document.getElementById('sl-costo').value);
+  document.getElementById('v-motos').textContent = motos;
+  document.getElementById('v-pct').textContent   = Math.round(pct*100);
+  document.getElementById('v-inst').textContent  = inst.toLocaleString();
+  document.getElementById('v-venta').textContent = venta.toLocaleString();
+  document.getElementById('v-costo').textContent = costo.toLocaleString();
+  const unidades  = Math.round(motos * pct);
+  const margen    = venta - costo;
+  const instIng   = unidades * inst;
+  const prodIng   = unidades * margen;
+  const total     = instIng + prodIng;
+  const anual     = total * 12;
+  document.getElementById('r-unidades').textContent  = unidades;
+  document.getElementById('r-margen').textContent    = '$' + margen.toLocaleString();
+  document.getElementById('r-inst-ing').textContent  = '$' + instIng.toLocaleString();
+  document.getElementById('r-prod-ing').textContent  = '$' + prodIng.toLocaleString();
+  document.getElementById('r-total').textContent     = '$' + total.toLocaleString();
+  document.getElementById('tip-unidades').textContent = `${unidades} instalaciones/mes`;
+  document.getElementById('tip-anual').textContent    = '$' + anual.toLocaleString() + '/año';
+}
+
+function copiarROI() {
+  const motos  = document.getElementById('sl-motos').value;
+  const pct    = document.getElementById('sl-pct').value;
+  const total  = document.getElementById('r-total').textContent;
+  const anual  = document.getElementById('tip-anual').textContent;
+  const unid   = document.getElementById('r-unidades').textContent;
+  const txt = `🔐 *HAWK LOCK · Proyección para tu taller*\n\n` +
+    `Vehículos/mes: ${motos}\n` +
+    `% que aceptarían: ${pct}%\n` +
+    `Unidades estimadas: ${unid}/mes\n\n` +
+    `💰 *Ingreso adicional mensual: ${total}*\n` +
+    `📈 *Ingreso anual: ${anual}*\n\n` +
+    `Todo eso sin cambiar tu actividad principal. ¿Conversamos?`;
+  navigator.clipboard.writeText(txt).then(() => toast('Copiado al portapapeles ✓','ok'));
+}
+
+// ── UTILS ─────────────────────────────────────────────────
+function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+
+let toastTimer;
+function toast(msg, tipo='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + tipo;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = '', 2800);
+}
+
+let debTimer;
+function debounce(fn, ms) { clearTimeout(debTimer); debTimer = setTimeout(fn, ms); }
+</script>
+</body>
+</html>
